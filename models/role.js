@@ -7,12 +7,8 @@ const RoleSchema = Schema({
   },
   created_at: {
     type: String,
-    default: new Date().getTime()
+    default: Date.now
   },
-  updated_at: {
-    type: String,
-    default: new Date().getTime()
-  }
 })
 
 RoleSchema.methods.toJSON = function () {

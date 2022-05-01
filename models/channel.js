@@ -14,7 +14,7 @@ const ChannelSchema = Schema({
   },
   created_at: {
     type: String,
-    default: new Date().getTime()
+    default: Date.now
   },
 })
 

@@ -38,9 +38,9 @@ const postUser = async (req, res) => {
 }
 const putUser = async (req, res) => {
   const { id } = req.params
-  const { _id, password, email, google, ...rest } = req.body
+  const { _id, password, email, google, role, ...rest } = req.body
 
-  rest.updated_at = new Date().getTime()
+  rest.updated_at = Date.now
   if (password) {
     const salt = bcryptjs.genSaltSync();
     rest.password = bcryptjs.hashSync(password, salt);

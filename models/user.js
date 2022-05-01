@@ -37,12 +37,8 @@ const UserSchema = Schema({
   },
   created_at: {
     type: String,
-    default: new Date().getTime()
+    default: Date.now
   },
-  updated_at: {
-    type: String,
-    default: new Date().getTime()
-  }
 })
 
 UserSchema.methods.toJSON = function () {

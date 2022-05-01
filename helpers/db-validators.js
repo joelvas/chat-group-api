@@ -2,7 +2,7 @@ const { Role, User } = require('../models')
 
 const roleExists = async (role = '') => {
   const roleExists = await Role.findOne({ role })
-  if (!roleExists) {
+  if (!roleExists && role !== '') {
     throw new Error(`Role ${role} does not exist.`)
   }
 }
