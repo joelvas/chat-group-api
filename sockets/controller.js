@@ -8,23 +8,25 @@ const socketController = async (socket, io) => {
     return socket.disconnect()
   }
 
-  //Getting all channels in database and last subscription
-  const [channels, subscription] = await Promise.all([
-    Channel.find(),
-    Subscription.findOne({ user: user.id })
-  ])
+  //Getting and sending all channels to all
+  const channels = await Channel.find()
+  socket.emit('channels-list', channels)
 
   let currentChannel
   let currentChannelSubs
   let currentMembers
+  let currentMessages
 
-  if (subscription) currentChannel = await Channel.findById(subscription.channel)
+  const subscription = await Subscription.findOne({ user: user.id }).populate('channel')
+  if (subscription) currentChannel = subscription.channel
   if (currentChannel) socket.emit('current-channel', currentChannel)
 
-  if (currentChannel) currentChannelSubs = await Subscription.find({ channel: currentChannel.id }).populate('user')
+  if (currentChannel) currentMessages = await Message.find({ channel: currentChannel._id }).populate('user')
+  if (currentMessages) io.to(currentChannel._id).emit('current-messages', currentMessages.reverse())
+
+  if (currentChannel) currentChannelSubs = await Subscription.find({ channel: currentChannel._id }).populate('user')
   if (currentChannelSubs) currentMembers = currentChannelSubs.map(ch => ch.user)
-  if (currentMembers) io.to(currentChannel.id).emit('current-members', currentMembers)
-  socket.emit('channels-list', channels)
+  if (currentMembers) io.to(currentChannel._id).emit('current-members', currentMembers)
 
   socket.on('create-channel', async (payload, callback) => {
     const oldSub = await Subscription.findOne({ user: user.id })
@@ -80,7 +82,7 @@ const socketController = async (socket, io) => {
     socket.join(channel._id)
 
     //getting channel messages
-    const currentMessages = await Message.find({ channel: channel._id }).populate('user')
+    currentMessages = await Message.find({ channel: channel._id }).populate('user')
     io.to(channel._id).emit('current-messages', currentMessages.reverse())
 
     //getting channel members from database
@@ -107,6 +109,7 @@ const socketController = async (socket, io) => {
   })
 
   socket.on('disconnect', async () => {
+    console.log('user', user.name, 'disconnected')
     const oldSub = await Subscription.findOne({ user: user.id })
     if (oldSub) {
       //removing last sub in database
