@@ -29,6 +29,7 @@ const socketController = async (socket, io) => {
   if (currentMembers) io.to(currentChannel._id).emit('current-members', currentMembers)
 
   socket.on('create-channel', async (payload, callback) => {
+    if (payload.name === '') return false
     const oldSub = await Subscription.findOne({ user: user.id })
     if (oldSub) {
       //removing last sub in database
@@ -98,6 +99,7 @@ const socketController = async (socket, io) => {
   })
 
   socket.on('create-message', async (payload) => {
+    if (payload.text === '') return false
     const newMsg = new Message({
       text: payload.text,
       channel: payload.channel,
@@ -106,6 +108,12 @@ const socketController = async (socket, io) => {
     await newMsg.save()
     const populatedMsg = await newMsg.populate('user')
     io.to(payload.channel).emit('new-message', populatedMsg)
+
+  })
+
+  socket.on('search-channel', async (payload, callback) => {
+    const channels = await Channel.find({ 'name': { '$regex': payload, '$options': 'i' } })
+    callback(channels)
   })
 
   socket.on('disconnect', async () => {

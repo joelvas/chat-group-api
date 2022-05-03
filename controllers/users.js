@@ -2,6 +2,9 @@ const bcryptjs = require('bcryptjs')
 const { generateJWT } = require('../helpers/generate-jwt')
 const User = require('../models/user')
 
+const cloudinary = require('cloudinary').v2
+cloudinary.config(process.env.CLOUDINARY_URL)
+
 const getUsers = async (req, res) => {
   const { limit = 5, page = 1 } = req.query
   const query = { status: true }
@@ -39,7 +42,21 @@ const postUser = async (req, res) => {
 const putUser = async (req, res) => {
   const { id } = req.params
   const { _id, password, email, google, role, ...rest } = req.body
-
+  const files = req.files
+  if (files) {
+    const image = files.image
+    if (req.user.img) {
+      const nameArr = req.user.img.split('/')
+      const name = nameArr[nameArr.length - 1]
+      const [public_id] = name.split('.')
+      cloudinary.uploader.destroy('chat-group/' + public_id)
+    }
+    const { secure_url } = await cloudinary.uploader.upload(image.tempFilePath, { folder: 'chat-group' })
+      .catch((err) => {
+        if (err.response) console.log(error.response.data)
+      })
+    rest.img = secure_url
+  }
   rest.updated_at = Date.now
   if (password) {
     const salt = bcryptjs.genSaltSync();
