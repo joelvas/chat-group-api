@@ -10,7 +10,10 @@ const ChannelSchema = Schema({
   },
   password: {
     type: String,
-    default: null
+  },
+  private: {
+    type: Boolean,
+    default: false
   },
   created_at: {
     type: String,
@@ -19,7 +22,7 @@ const ChannelSchema = Schema({
 })
 
 ChannelSchema.methods.toJSON = function () {
-  const { __v, updated_at, ...channel } = this.toObject();
+  const { __v, updated_at, password, ...channel } = this.toObject();
   return channel
 }
 

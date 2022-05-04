@@ -61,41 +61,62 @@ const socketController = async (socket, io) => {
     callback(newChannel)
   })
 
-  socket.on('join-channel', async (channel) => {
-    //getting last subscription
-    const oldSub = await Subscription.findOne({ user: user.id })
-    if (oldSub) {
-      //removing last sub in database
-      await Subscription.deleteMany({ user: user.id })
+  socket.on('edit-channel', async (payload, callback) => {
+    if (payload.password) if (payload.password === '') delete payload.password
+    if (payload.password) payload.private = true
+    const channelUpdated = await Channel.findByIdAndUpdate(payload._id, payload, { new: true })
+    io.emit('channel-updated', channelUpdated)
+    callback(channelUpdated)
+  })
 
-      //removing from user data
-      io.to(oldSub.channel.toString()).emit('remove-member', user)
+  socket.on('delete-channel', async (payload, callback) => {
+    await Channel.deleteOne({ _id: payload._id })
+    io.emit('remove-channel', payload)
+    callback(true)
+  })
 
-      //removing from socket channel
-      io.in(socket.id).socketsLeave([oldSub.channel.toString()])
+  socket.on('join-channel', async (channel, callback) => {
+    //verify password
+    const cha = await Channel.findOne({ _id: channel._id })
+    if (cha.private && channel.password !== cha.password) {
+      callback(false)
+    } else {
+      //getting last subscription
+      const oldSub = await Subscription.findOne({ user: user.id })
+      if (oldSub) {
+        //removing last sub in database
+        await Subscription.deleteMany({ user: user.id })
+
+        //removing from user data
+        io.to(oldSub.channel.toString()).emit('remove-member', user)
+
+        //removing from socket channel
+        io.in(socket.id).socketsLeave([oldSub.channel.toString()])
+      }
+
+      //registering new sub in database channel
+      const newSub = new Subscription({ user: user.id, channel: channel._id })
+      await newSub.save()
+
+      //registering in socket channel
+      socket.join(channel._id)
+
+      //getting channel messages
+      currentMessages = await Message.find({ channel: channel._id }).populate('user')
+      io.to(channel._id).emit('current-messages', currentMessages.reverse())
+
+      //getting channel members from database
+      currentChannelSubs = await Subscription
+        .find({ channel: channel._id }).populate('user')
+      if (currentChannelSubs) currentMembers = currentChannelSubs.map(ch => ch.user)
+
+      //sending new member to the channel
+      socket.broadcast.to(channel._id).emit('new-member', user)
+
+      //getting current users
+      socket.emit('current-members', currentMembers)
+      callback(true)
     }
-
-    //registering new sub in database channel
-    const newSub = new Subscription({ user: user.id, channel: channel._id })
-    await newSub.save()
-
-    //registering in socket channel
-    socket.join(channel._id)
-
-    //getting channel messages
-    currentMessages = await Message.find({ channel: channel._id }).populate('user')
-    io.to(channel._id).emit('current-messages', currentMessages.reverse())
-
-    //getting channel members from database
-    currentChannelSubs = await Subscription
-      .find({ channel: channel._id }).populate('user')
-    if (currentChannelSubs) currentMembers = currentChannelSubs.map(ch => ch.user)
-
-    //sending new member to the channel
-    socket.broadcast.to(channel._id).emit('new-member', user)
-
-    //getting current users
-    socket.emit('current-members', currentMembers)
   })
 
   socket.on('create-message', async (payload) => {
