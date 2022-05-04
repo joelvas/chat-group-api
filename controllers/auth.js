@@ -1,4 +1,5 @@
 const User = require('../models/user')
+const Log = require('../models/log')
 const bycryptjs = require('bcryptjs')
 const { generateJWT } = require('../helpers/generate-jwt')
 const { googleVerify } = require('../helpers/google-verify')
@@ -29,6 +30,8 @@ const login = async (req, res) => {
     }
     //Generate jwt
     const token = await generateJWT(user.id)
+    const log = new Log({ user: user.id })
+    await log.save()
 
     return res.json({
       user,

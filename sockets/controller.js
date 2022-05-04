@@ -7,26 +7,11 @@ const socketController = async (socket, io) => {
   if (!user) {
     return socket.disconnect()
   }
+  console.log('user', user.name, 'connected')
 
-  //Getting and sending all channels to all
+  //Getting all channels
   const channels = await Channel.find()
   socket.emit('channels-list', channels)
-
-  let currentChannel
-  let currentChannelSubs
-  let currentMembers
-  let currentMessages
-
-  const subscription = await Subscription.findOne({ user: user.id }).populate('channel')
-  if (subscription) currentChannel = subscription.channel
-  if (currentChannel) socket.emit('current-channel', currentChannel)
-
-  if (currentChannel) currentMessages = await Message.find({ channel: currentChannel._id }).populate('user')
-  if (currentMessages) io.to(currentChannel._id).emit('current-messages', currentMessages.reverse())
-
-  if (currentChannel) currentChannelSubs = await Subscription.find({ channel: currentChannel._id }).populate('user')
-  if (currentChannelSubs) currentMembers = currentChannelSubs.map(ch => ch.user)
-  if (currentMembers) io.to(currentChannel._id).emit('current-members', currentMembers)
 
   socket.on('create-channel', async (payload, callback) => {
     if (payload.name === '') return false
