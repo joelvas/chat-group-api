@@ -6,7 +6,7 @@ API for chat-group webapp
 npm install
 ```
 
-### Run app
+## Run app
 ```
 node app.js
 ```
