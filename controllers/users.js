@@ -30,10 +30,10 @@ const getUser = async (req, res) => {
 const postUser = async (req, res) => {
   const { name, email, password } = req.body
   let role = 'USER_ROLE'
-  const user = new User({ name, email, password, role });
+  const user = new User({ name, email, password, role })
 
-  const salt = bcryptjs.genSaltSync();
-  user.password = bcryptjs.hashSync(password, salt);
+  const salt = bcryptjs.genSaltSync()
+  user.password = bcryptjs.hashSync(password, salt)
 
   await user.save()
   const token = await generateJWT(user.id)
@@ -51,19 +51,22 @@ const putUser = async (req, res) => {
       const [public_id] = name.split('.')
       cloudinary.uploader.destroy('chat-group/' + public_id)
     }
-    const { secure_url } = await cloudinary.uploader.upload(image.tempFilePath, { folder: 'chat-group' })
+    const { secure_url } = await cloudinary.uploader
+      .upload(image.tempFilePath, { folder: 'chat-group' })
       .catch((err) => {
-        if (err.response) console.log(error.response.data)
+        if (err.response) console.log(err.response.data)
       })
     rest.img = secure_url
   }
   rest.updated_at = Date.now
   if (password) {
-    const salt = bcryptjs.genSaltSync();
-    rest.password = bcryptjs.hashSync(password, salt);
+    const salt = bcryptjs.genSaltSync()
+    rest.password = bcryptjs.hashSync(password, salt)
   }
 
-  const user = await User.findByIdAndUpdate(id, rest, { returnDocument: 'after' });
+  const user = await User.findByIdAndUpdate(id, rest, {
+    returnDocument: 'after'
+  })
 
   res.status(200).json(user)
 }
