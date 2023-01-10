@@ -5,19 +5,23 @@ const { generateJWT } = require('../helpers/generate-jwt')
 const { googleVerify } = require('../helpers/google-verify')
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email })
 
     //Email exists
     if (!user) {
       return res.status(400).json({
+        success: false,
+        message: 'User does not exist',
         msg: 'User does not exist.'
       })
     }
     //Active user
     if (!user.status) {
       return res.status(400).json({
+        success: false,
+        message: 'User does not active',
         msg: 'User does not active.'
       })
     }
@@ -25,6 +29,8 @@ const login = async (req, res) => {
     const validPassword = bycryptjs.compareSync(password, user.password)
     if (!validPassword) {
       return res.status(400).json({
+        success: false,
+        message: 'Invalid password',
         msg: 'Invalid password.'
       })
     }
@@ -37,10 +43,11 @@ const login = async (req, res) => {
       user,
       token
     })
-  }
-  catch (err) {
+  } catch (err) {
     console.log(err)
     return res.status(500).json({
+      success: false,
+      message: 'Contact with the administrator',
       msg: 'Contact with the administrator.'
     })
   }

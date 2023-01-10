@@ -24,5 +24,15 @@ MessageSchema.methods.toJSON = function () {
   return message
 }
 
+MessageSchema.virtual('id').get(function(){
+  return this._id.toHexString();
+});
+
+MessageSchema.set('toJSON', {
+  virtuals: true
+});
+
+MessageSchema.set('toObject', { virtuals: true })
+
 module.exports = model('Message', MessageSchema)
 

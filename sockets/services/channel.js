@@ -76,6 +76,7 @@ const onJoinChannel = async ({ payload, callback, io, user, socket }) => {
     currentChannelSubs = await Subscription.find({
       channel: payload._id
     }).populate('user')
+    
     if (currentChannelSubs)
       currentMembers = currentChannelSubs.map((ch) => ch.user)
 

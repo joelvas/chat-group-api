@@ -26,5 +26,15 @@ ChannelSchema.methods.toJSON = function () {
   return channel
 }
 
+ChannelSchema.virtual('id').get(function(){
+  return this._id.toHexString();
+});
+
+ChannelSchema.set('toJSON', {
+  virtuals: true
+});
+
+ChannelSchema.set('toObject', { virtuals: true })
+
 module.exports = model('Channel', ChannelSchema)
 

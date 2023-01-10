@@ -10,14 +10,19 @@ class Server {
     this.server = createServer(this.app)
     this.io = require('socket.io')(this.server, {
       cors: {
-        origin: ['http://localhost:3000', 'https://chat-group.netlify.app'],
+        origin: [
+          'http://localhost:3000',
+          'https://chat-group.netlify.app',
+          'http://192.168.1.34:19000',
+        ],
         methods: ['GET', 'POST']
       }
     })
     this.port = process.env.PORT
     this.path = {
       auth: '/api/auth',
-      users: '/api/users'
+      users: '/api/users',
+      channels: '/api/channels'
     }
     this.database()
     this.middlewares()
@@ -31,14 +36,17 @@ class Server {
     this.app.use(cors())
     this.app.use(express.json())
     this.app.use(express.static('public'))
-    this.app.use(fileUpload({ useTempFiles: true }));
+    this.app.use(fileUpload({ useTempFiles: true }))
   }
   routes() {
     this.app.use(this.path.auth, require('../routes/auth'))
     this.app.use(this.path.users, require('../routes/users'))
+    this.app.use(this.path.channels, require('../routes/channels'))
   }
   sockets() {
-    this.io.on('connection', (socket) => { socketController(socket, this.io) })
+    this.io.on('connection', (socket) => {
+      socketController(socket, this.io)
+    })
   }
   listen() {
     this.server.listen(this.port, () => {

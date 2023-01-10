@@ -12,6 +12,7 @@ const { onCreateMessage } = require('./services/message')
 
 const socketController = async (socket, io) => {
   const user = await validateJWT(socket.handshake.headers['x-token'])
+  
   if (!user) {
     return socket.disconnect()
   }
