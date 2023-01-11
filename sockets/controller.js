@@ -12,12 +12,13 @@ const { onCreateMessage } = require('./services/message')
 
 const socketController = async (socket, io) => {
   const user = await validateJWT(socket.handshake.headers['x-token'])
-  
+
   if (!user) {
     return socket.disconnect()
   }
   console.log('user', user.name, 'connected')
-  socket.emit('channels-list', fetchChannels())
+  const channels = await fetchChannels()
+  socket.emit('channels-list', channels)
 
   socket.on('create-channel', (payload, callback) =>
     onCreateChannel({ payload, callback, io, user, socket })
