@@ -10,11 +10,7 @@ class Server {
     this.server = createServer(this.app)
     this.io = require('socket.io')(this.server, {
       cors: {
-        origin: [
-          'http://localhost:3000',
-          'https://chat-group.netlify.app',
-          'http://192.168.1.34:19000',
-        ],
+        origin: "*",
         methods: ['GET', 'POST']
       }
     })
