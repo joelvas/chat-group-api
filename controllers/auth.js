@@ -53,6 +53,30 @@ const login = async (req, res) => {
   }
 }
 
+const restorePassword = async (req, res) => {
+  const { email, password } = req.body
+
+  try {
+    const user = await User.findOne({ email })
+
+    const salt = bycryptjs.genSaltSync()
+    user.password = bycryptjs.hashSync(password, salt)
+
+    await user.save()
+
+    res
+      .status(200)
+      .json({ success: true, message: 'Password restore succesful' })
+  } catch (err) {
+    console.log(err)
+    return res.status(500).json({
+      success: false,
+      message: 'Contact with the administrator',
+      msg: 'Contact with the administrator.'
+    })
+  }
+}
+
 const googleSignIn = async (req, res) => {
   const { id_token } = req.body
   try {
@@ -110,5 +134,6 @@ module.exports = {
   login,
   googleSignIn,
   refreshToken,
-  facebookSignIn
+  facebookSignIn,
+  restorePassword
 }
