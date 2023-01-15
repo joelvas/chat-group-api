@@ -4,6 +4,7 @@ const User = require('./user')
 const Message = require('./message')
 const Channel = require('./channel')
 const Subscription = require('./subscription')
+const SocketResponse = require('./socket-response')
 
 module.exports = {
   Role,
@@ -11,5 +12,6 @@ module.exports = {
   User,
   Message,
   Channel,
-  Subscription
+  Subscription,
+  SocketResponse
 }

@@ -8,7 +8,7 @@ const {
   fetchChannels
 } = require('./services/channel')
 const { onDisconnect } = require('./services/server')
-const { onCreateMessage } = require('./services/message')
+const { onCreateMessage, onDeleteMessage } = require('./services/message')
 
 const socketController = async (socket, io) => {
   const user = await validateJWT(socket.handshake.headers['x-token'])
@@ -17,7 +17,9 @@ const socketController = async (socket, io) => {
     return socket.disconnect()
   }
   console.log('user', user.name, 'connected')
+  
   const channels = await fetchChannels()
+
   socket.emit('channels-list', channels)
 
   socket.on('create-channel', (payload, callback) =>
@@ -42,6 +44,10 @@ const socketController = async (socket, io) => {
 
   socket.on('create-message', (payload, callback) =>
     onCreateMessage({ payload, callback, io, user, socket })
+  )
+
+  socket.on('delete-message', (payload, callback) =>
+    onDeleteMessage({ payload, callback, io, user, socket })
   )
 
   socket.on('disconnect', (payload, callback) =>
