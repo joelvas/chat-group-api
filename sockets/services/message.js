@@ -1,6 +1,6 @@
 const { Message, Channel } = require('../../models')
 
-const onCreateMessage = async ({ payload, io, user }) => {
+const onCreateMessage = async ({ payload, callback, io, user }) => {
   if (payload.text === '') return false
   const channel = await Channel.findOne({ _id: payload.channel })
 
@@ -11,9 +11,12 @@ const onCreateMessage = async ({ payload, io, user }) => {
   })
 
   await newMsg.save()
-  const populatedMsg = await newMsg.populate(['user', 'channel']).execPopulate()
+  const populatedMsg = await newMsg.populate(['user', 'channel'])
 
   io.to(payload.channel).emit('new-message', populatedMsg)
+  console.log(populatedMsg)
+  
+  callback(true)
 }
 
 module.exports = {
