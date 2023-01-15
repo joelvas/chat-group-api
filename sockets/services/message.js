@@ -1,21 +1,25 @@
 const { Message, Channel, SocketResponse } = require('../../models')
 
 const onCreateMessage = async ({ payload, callback, socket, user }) => {
-  if (payload.text === '') return false
-  const channel = await Channel.findOne({ _id: payload.channel })
+  try {
+    if (payload.text === '') return false
+    const channel = await Channel.findOne({ _id: payload.channel })
 
-  const newMsg = new Message({
-    text: payload.text,
-    channel: channel._id,
-    user: user.id
-  })
+    const newMsg = new Message({
+      text: payload.text,
+      channel: channel._id,
+      user: user.id
+    })
 
-  await newMsg.save()
-  const populatedMsg = await newMsg.populate(['user', 'channel'])
+    await newMsg.save()
+    const populatedMsg = await newMsg.populate(['user', 'channel'])
 
-  socket.broadcast.to(payload.channel).emit('new-message', populatedMsg)
+    socket.broadcast.to(payload.channel).emit('new-message', populatedMsg)
 
-  callback(populatedMsg)
+    callback(populatedMsg)
+  } catch (err) {
+    callback(new SocketResponse(false, 'There was an error'))
+  }
 }
 
 const onDeleteMessage = async ({ payload, callback, socket, user }) => {
