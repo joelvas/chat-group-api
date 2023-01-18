@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "local": "nodemon ./src/app.ts",
-    "start": "node ./dist/app.js"
+    "start": "node ./dist/app.js",
+    "postinstall": "npx tsc"
   },
   "author": "",
   "license": "ISC",
