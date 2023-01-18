@@ -1,1 +1,2 @@
-declare module 'socket.io-parser'
+declare module 'socket.io-parser';
+export {}
