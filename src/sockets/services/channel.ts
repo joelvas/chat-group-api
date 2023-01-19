@@ -1,6 +1,6 @@
+import { UserDocument } from './../../interfaces/user.interface.js'
 import { SocketHandler } from '../../interfaces/socket-handler.interface.js'
 import { IChannel } from '../../interfaces/channel.interface.js'
-import { ISubscription } from '../../interfaces/subscription.interface.js'
 import Channel from '../../models/channel.js'
 import Subscription from '../../models/subscription.js'
 import Message from '../../models/message.js'
@@ -22,26 +22,23 @@ const onCreateChannel = async (
   const channelExists = await Channel.find({ name: payload.name })
   if (channelExists) callback(new SocketResponse(false, 'Room already exists'))
 
-  //regitering new channel in database
   const newChannel = new Channel(payload)
   await newChannel.save()
 
-  //registering new sub in database channel
   const newSub = new Subscription({ user: user.id, channel: newChannel.id })
   await newSub.save()
 
-  //registering in socket channel
   socket.join(newChannel.id)
 
-  //sending new channel to everybody
+  socket.emit('current-members', [user])
+
   io.emit('new-channel', newChannel)
 
-  //sending current channel to me
   callback(newChannel)
 }
 
 const onEditChannel = async (
-  { io, user, socket }: SocketHandler,
+  { io }: SocketHandler,
   payload: IChannel,
   callback: (response: IChannel | SocketResponse) => any
 ) => {
@@ -80,9 +77,9 @@ const onDeleteChannel = async (
 }
 
 const onJoinChannel = async (
-  { io, user, socket }: SocketHandler,
+  { user, socket }: SocketHandler,
   payload: IChannel,
-  callback: (response: SocketResponse) => any
+  callback: (response: SocketResponse | IChannel) => any
 ) => {
   const channel = await Channel.findOne({ _id: payload._id })
 
@@ -95,11 +92,12 @@ const onJoinChannel = async (
 
   const currentChannelSubs = await Subscription.find({
     channel: channel._id
-  }).populate('user')
+  }).populate<{ user: UserDocument }>('user')
 
-  const userSubscribed = currentChannelSubs.find(
-    (sub) => sub.user._id === user._id
-  )
+  const userSubscribed = currentChannelSubs.find((sub) => {
+    return sub.user._id.toString() === user.id
+  })
+
   if (
     !channel.private ||
     (channel.private && userSubscribed) ||
@@ -113,42 +111,45 @@ const onJoinChannel = async (
 
     socket.emit('current-messages', currentMessages.reverse())
 
-    const currentMembers = currentChannelSubs
-      ? currentChannelSubs.map((sub: ISubscription) => sub.user)
-      : []
+    const currentMembers = currentChannelSubs.map((sub) => sub.user) || []
 
     socket.broadcast.to(channel._id.toString()).emit('new-member', user)
 
     socket.emit('current-members', currentMembers)
 
-    callback(new SocketResponse(true, 'You joined succesfully'))
+    callback(channel)
   } else {
-    callback(new SocketResponse(false, 'There was an error'))
+    callback(new SocketResponse(false, 'You are not allowed to join this room'))
   }
 }
 
 const onSuscribeChannel = async (
-  { io, user, socket }: SocketHandler,
+  { user, socket }: SocketHandler,
   payload: IChannel,
   callback: (response: SocketResponse) => any
 ) => {
-  const channel = await Channel.findOne({ _id: payload._id })
+  const channel = await Channel.findOne({ _id: payload.id })
   if (channel === null) {
     callback(new SocketResponse(false, 'Room does not exist'))
     return
   }
-  const currentSub = await Subscription.findOne({
-    channel: channel._id,
+
+  const subscriptions = await Subscription.find({
     user: user.id
+  }).populate('channel')
+
+  const currentSub = subscriptions.find((sub) => {
+    return sub.channel._id.toString() === payload.id
   })
 
   if (currentSub) {
+    socket.emit('subscriptions-list', subscriptions)
     callback(new SocketResponse(true, 'You subscribed successfully'))
   } else {
     const newSub = new Subscription({ user: user.id, channel: channel._id })
     await newSub.save()
-
-    socket.broadcast.to(channel._id.toString()).emit('new-member', user)
+    const populatedSub = await newSub.populate('channel')
+    socket.emit('subscriptions-list', [...subscriptions, populatedSub])
     callback(new SocketResponse(true, 'You subscribed successfully'))
   }
 }

@@ -1,7 +1,8 @@
-import { SchemaDefinitionProperty, Types } from 'mongoose'
+import { SchemaDefinitionProperty, Types, Document } from 'mongoose'
+import { SubscriptionDocument } from './subscription.interface.js'
 
 export interface IUser {
-  _id: Types.ObjectId,
+  _id: Types.ObjectId
   id: string
   name: string
   bio: string
@@ -10,7 +11,10 @@ export interface IUser {
   password: string
   img: string
   role: string
+  subscriptions?: SubscriptionDocument[]
   status: boolean
   google: boolean
   created_at: SchemaDefinitionProperty<String>
 }
+
+export type UserDocument = IUser & Document

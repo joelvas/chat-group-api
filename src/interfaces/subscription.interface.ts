@@ -1,6 +1,4 @@
-import { SchemaDefinitionProperty, Types } from 'mongoose'
-import { IChannel } from './channel.interface.js'
-import { IUser } from './user.interface.js'
+import { SchemaDefinitionProperty, Types, Document } from 'mongoose'
 
 export interface ISubscription {
   _id: Types.ObjectId
@@ -9,3 +7,5 @@ export interface ISubscription {
   channel: Types.ObjectId
   created_at: SchemaDefinitionProperty<String>
 }
+
+export type SubscriptionDocument = ISubscription & Document

@@ -1,6 +1,7 @@
 import Message from '../../models/message.js'
 import Channel from '../../models/channel.js'
 import SocketResponse from '../../models/socket-response.js'
+import UserMessage from '../../models/user-message.js'
 import { IMessage } from '../../interfaces/message.interface.js'
 import { SocketHandler } from '../../interfaces/socket-handler.interface.js'
 
@@ -23,9 +24,17 @@ const onCreateMessage = async (
       channel: channel._id,
       user: user.id
     })
+    const savedMsg = await newMsg.save()
+    
+    const newUserMsg = new UserMessage({
+      message: savedMsg._id,
+      user: user._id,
+      read: false,
+      recieved: false
+    })
+    await newUserMsg.save()
 
-    await newMsg.save()
-    const populatedMsg = await newMsg.populate(['user', 'channel'])
+    const populatedMsg = await savedMsg.populate(['user', 'channel'])
 
     socket.broadcast
       .to(channel._id.toString())
@@ -70,7 +79,4 @@ const onDeleteMessage = async (
   }
 }
 
-export {
-  onCreateMessage,
-  onDeleteMessage
-}
+export { onCreateMessage, onDeleteMessage }

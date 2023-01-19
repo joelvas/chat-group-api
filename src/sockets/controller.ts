@@ -6,12 +6,14 @@ import {
   onDeleteChannel,
   onJoinChannel,
   onSearchChannel,
-  fetchChannels
+  fetchChannels,
+  onSuscribeChannel
 } from './services/channel.js'
 import { Socket, Server } from 'socket.io'
 import { onDisconnect } from './services/server.js'
 import { onCreateMessage, onDeleteMessage } from './services/message.js'
 import { SocketHandler } from '../interfaces/socket-handler.interface.js'
+import { fetchSubscriptions } from './services/subscription.js'
 
 const socketController = async (socket: Socket, io: Server) => {
   const token = socket.handshake.headers['x-token']
@@ -25,11 +27,18 @@ const socketController = async (socket: Socket, io: Server) => {
   const socketHandler = { io, user, socket } as SocketHandler
 
   const channels = await fetchChannels()
+  const subscriptions = await fetchSubscriptions({ user, io, socket })
 
   socket.emit('channels-list', channels)
 
+  socket.emit('subscriptions-list', subscriptions)
+
   socket.on('create-channel', (payload, callback) =>
     onCreateChannel(socketHandler, payload, callback)
+  )
+
+  socket.on('subscribe-channel', (payload, callback) =>
+    onSuscribeChannel(socketHandler, payload, callback)
   )
 
   socket.on('edit-channel', (payload, callback) =>
