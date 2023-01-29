@@ -77,7 +77,7 @@ const onDeleteChannel = async (
 }
 
 const onJoinChannel = async (
-  { user, socket }: SocketHandler,
+  { user, socket, io }: SocketHandler,
   payload: IChannel,
   callback: (response: SocketResponse | IChannel) => any
 ) => {
@@ -90,9 +90,13 @@ const onJoinChannel = async (
 
   const isPasswordCorrect = payload.password == channel.password
 
-  const currentChannelSubs = await Subscription.find({
-    channel: channel._id
-  }).populate<{ user: UserDocument }>('user')
+  const [currentChannelSubs] = await Promise.all([
+    Subscription.find({
+      channel: channel._id
+    })
+      .populate<{ user: UserDocument }>('user')
+      .exec()
+  ])
 
   const userSubscribed = currentChannelSubs.find((sub) => {
     return sub.user._id.toString() === user.id
@@ -103,13 +107,19 @@ const onJoinChannel = async (
     (channel.private && userSubscribed) ||
     (channel.private && isPasswordCorrect)
   ) {
-    socket.join(channel._id.toString())
-
     const currentMessages = await Message.find({
       channel: channel._id
-    }).populate('user')
+    })
+      .populate('user')
+      .sort('-created_at')
+      .limit(50)
+      .exec()
 
-    socket.emit('current-messages', currentMessages.reverse())
+    // const roomClients = io.sockets.adapter.rooms[`${channel._id}`].sockets
+
+    socket.join(channel._id.toString())
+
+    // socket.emit(channel._id + '/current-messages', currentMessages)
 
     const currentMembers = currentChannelSubs.map((sub) => sub.user) || []
 

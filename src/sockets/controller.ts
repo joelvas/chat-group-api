@@ -1,5 +1,6 @@
 import { IUser } from './../interfaces/user.interface.js'
 import { validateJWT } from '../helpers/generate-jwt.js'
+import { fetchMessages } from './services/message.js'
 import {
   onCreateChannel,
   onEditChannel,
@@ -30,8 +31,12 @@ const socketController = async (socket: Socket, io: Server) => {
   const subscriptions = await fetchSubscriptions({ user, io, socket })
 
   socket.emit('channels-list', channels)
-
   socket.emit('subscriptions-list', subscriptions)
+
+  subscriptions.forEach(async (sub) => {
+    const channelId = sub.channel._id.toString()
+    socket.join(channelId)
+  })
 
   socket.on('create-channel', (payload, callback) =>
     onCreateChannel(socketHandler, payload, callback)

@@ -5,6 +5,19 @@ import UserMessage from '../../models/user-message.js'
 import { IMessage } from '../../interfaces/message.interface.js'
 import { SocketHandler } from '../../interfaces/socket-handler.interface.js'
 
+interface FetchMessagesParams {
+  channelId: string
+}
+export const fetchMessages = async (params: FetchMessagesParams) => {
+  return await Message.find({
+    channel: params.channelId
+  })
+    .populate('user')
+    .sort('-created_at')
+    .limit(50)
+    .exec()
+}
+
 const onCreateMessage = async (
   { io, user, socket }: SocketHandler,
   payload: IMessage,
@@ -25,7 +38,7 @@ const onCreateMessage = async (
       user: user.id
     })
     const savedMsg = await newMsg.save()
-    
+
     const newUserMsg = new UserMessage({
       message: savedMsg._id,
       user: user._id,
@@ -38,7 +51,7 @@ const onCreateMessage = async (
 
     socket.broadcast
       .to(channel._id.toString())
-      .emit('new-message', populatedMsg)
+      .emit(`${channel._id.toString()}/new-message`, populatedMsg)
 
     callback(populatedMsg)
   } catch (err) {
@@ -70,7 +83,7 @@ const onDeleteMessage = async (
     await Message.deleteOne({ _id: message._id })
     socket.broadcast
       .to(message.channel._id.toString())
-      .emit('remove-message', message)
+      .emit(`${message.channel._id}/remove-message`, message)
 
     callback(new SocketResponse(true, 'Message deleted successfully'))
   } catch (err) {

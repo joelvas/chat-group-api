@@ -9,6 +9,7 @@ import { Paths } from '../interfaces/paths.interface.js'
 import authRoute from '../routes/auth.js'
 import userRoute from '../routes/users.js'
 import channelRoute from '../routes/channels.js'
+import messagesRoute from '../routes/messages.js'
 
 class Server {
   app: Express
@@ -29,7 +30,8 @@ class Server {
     this.path = {
       auth: '/api/auth',
       users: '/api/users',
-      channels: '/api/channels'
+      channels: '/api/channels',
+      messages: '/api/messages'
     }
     this.database()
     this.middlewares()
@@ -49,6 +51,7 @@ class Server {
     this.app.use(this.path.auth, authRoute)
     this.app.use(this.path.users, userRoute)
     this.app.use(this.path.channels, channelRoute)
+    this.app.use(this.path.messages, messagesRoute)
   }
   sockets() {
     this.io.on('connection', (socket) => {
